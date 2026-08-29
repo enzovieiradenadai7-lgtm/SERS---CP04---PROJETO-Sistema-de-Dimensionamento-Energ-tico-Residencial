@@ -1,1 +1,6 @@
-# SERS---CP04---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial
+# INTEGRANTES:
+
+# Leonardo Duarte
+# Enzo de Nadai
+# Eduardo Oliveira
+# João Pedro Conturbia
