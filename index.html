@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Consumo Energético</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #10141b;
+    --panel: #1a2029;
+    --panel-raised: #212836;
+    --line: #2c3340;
+    --amber: #ffb627;
+    --amber-dim: #7a611f;
+    --green: #4cd6a0;
+    --text: #eef1f5;
+    --text-dim: #8a93a1;
+    --danger: #e2685c;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.5;
+    padding: 32px 16px 64px;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  h1, h2 {
+    font-family: 'Space Grotesk', ui-sans-serif, sans-serif;
+    margin: 0;
+  }
+
+  /* ---------- Header / meter display ---------- */
+
+  header {
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    color: var(--text-dim);
+    max-width: 46ch;
+    margin: 6px 0 0;
+    font-size: 0.95rem;
+  }
+
+  .meter {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .meter-cell dt {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .meter-cell dd {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 1.9rem;
+    letter-spacing: 0.02em;
+    color: var(--amber);
+    text-shadow: 0 0 18px rgba(255, 182, 39, 0.35);
+  }
+
+  .meter-cell.cost dd {
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(76, 214, 160, 0.3);
+  }
+
+  .meter-cell dd span.unit {
+    font-size: 1rem;
+    color: var(--text-dim);
+    text-shadow: none;
+    margin-left: 4px;
+  }
+
+  /* ---------- Sections ---------- */
+
+  section {
+    margin-top: 32px;
+  }
+
+  section h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  section .hint {
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    margin: 0 0 16px;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--amber-dim);
+  }
+
+  input::placeholder { color: #5b6472; }
+
+  /* ---------- Equipment grid ---------- */
+
+  .equip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .equip-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+  }
+
+  .equip-card .name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .equip-card .watts {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .equip-card.selected {
+    border-color: var(--amber);
+    background: var(--panel-raised);
+  }
+
+  .equip-card.selected .watts { color: var(--amber); }
+
+  .add-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+  }
+
+  button.add-btn {
+    background: var(--amber);
+    border: none;
+    border-radius: var(--radius);
+    color: #1a1206;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    cursor: pointer;
+    height: 42px;
+  }
+
+  button.add-btn:hover { background: #ffc451; }
+
+  .form-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    min-height: 1.2em;
+  }
+
+  /* ---------- Added equipment list ---------- */
+
+  .item-list {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr 0.6fr 0.9fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.88rem;
+  }
+
+  .item-row:last-child { border-bottom: none; }
+
+  .item-row.head {
+    color: var(--text-dim);
+    font-size: 0.76rem;
+    background: var(--panel);
+  }
+
+  .item-row .consumo {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--amber);
+  }
+
+  .item-row button.remove {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .item-row button.remove:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .empty-state {
+    padding: 22px 14px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+  }
+
+  @media (max-width: 560px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .meter { grid-template-columns: 1fr; }
+    .add-row { grid-template-columns: 1fr; }
+    .item-row { grid-template-columns: 1fr; row-gap: 4px; }
+    .item-row.head { display: none; }
+    .item-row .consumo::before { content: 'Consumo: '; color: var(--text-dim); }
+    .item-row button.remove { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Painel de Consumo Energético</h1>
+    <p>Cadastre os equipamentos da casa e acompanhe, em tempo real, o consumo estimado em kWh por mês e o custo na conta de luz.</p>
+
+    <dl class="meter">
+      <div class="meter-cell">
+        <dt>Consumo total</dt>
+        <dd id="readoutKwh">000.00 <span class="unit">kWh/mês</span></dd>
+      </div>
+      <div class="meter-cell cost">
+        <dt>Custo estimado</dt>
+        <dd id="readoutCusto">R$ 0,00 <span class="unit">/mês</span></dd>
+      </div>
+    </dl>
+  </header>
+
+  <section>
+    <h2>Sua residência</h2>
+    <p class="hint">Esses dados aparecem no relatório final.</p>
+    <div class="field-grid">
+      <div>
+        <label for="nome">Nome</label>
+        <input id="nome" type="text" placeholder="Seu nome">
+      </div>
+      <div>
+        <label for="cidade">Cidade</label>
+        <input id="cidade" type="text" placeholder="Sua cidade">
+      </div>
+      <div>
+        <label for="area">Área da casa (m²)</label>
+        <input id="area" type="number" min="0" placeholder="Ex: 120">
+      </div>
+      <div>
+        <label for="moradores">Moradores</label>
+        <input id="moradores" type="number" min="1" placeholder="Ex: 4">
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <label for="valorKwh">Valor do kWh (R$)</label>
+        <input id="valorKwh" type="number" min="0" step="0.01" placeholder="Ex: 0,95">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Equipamentos</h2>
+    <p class="hint">Selecione um equipamento, informe a quantidade e as horas de uso por dia.</p>
+
+    <div class="equip-grid" id="equipGrid"></div>
+
+    <div class="add-row">
+      <div>
+        <label for="quantidade">Quantidade</label>
+        <input id="quantidade" type="number" min="1" placeholder="Ex: 2">
+      </div>
+      <div>
+        <label for="horas">Horas de uso por dia</label>
+        <input id="horas" type="number" min="0" max="24" step="0.5" placeholder="Ex: 8">
+      </div>
+      <button class="add-btn" id="addBtn">Adicionar</button>
+    </div>
+    <p class="form-error" id="formError"></p>
+  </section>
+
+  <section>
+    <h2>Equipamentos cadastrados</h2>
+    <div class="item-list" id="itemList">
+      <div class="item-row head">
+        <span>Equipamento</span>
+        <span>Qtd.</span>
+        <span>Horas/dia</span>
+        <span>Consumo</span>
+        <span></span>
+      </div>
+      <div class="empty-state" id="emptyState">Nenhum equipamento cadastrado ainda.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const equipamentos = [
+    { codigo: 1, nome: "Geladeira", potencia: 150 },
+    { codigo: 2, nome: "Chuveiro Elétrico", potencia: 5500 },
+    { codigo: 3, nome: "TV", potencia: 100 },
+    { codigo: 4, nome: "Ar-condicionado", potencia: 900 },
+    { codigo: 5, nome: "Computador", potencia: 200 },
+    { codigo: 6, nome: "Lâmpada LED", potencia: 9 },
+    { codigo: 7, nome: "Máquina de Lavar", potencia: 500 },
+    { codigo: 8, nome: "Micro-ondas", potencia: 1200 }
+  ];
+
+  let selecionado = null;
+  let itens = [];
+
+  const equipGrid = document.getElementById('equipGrid');
+  const quantidadeInput = document.getElementById('quantidade');
+  const horasInput = document.getElementById('horas');
+  const addBtn = document.getElementById('addBtn');
+  const formError = document.getElementById('formError');
+  const itemList = document.getElementById('itemList');
+  const emptyState = document.getElementById('emptyState');
+  const valorKwhInput = document.getElementById('valorKwh');
+  const readoutKwh = document.getElementById('readoutKwh');
+  const readoutCusto = document.getElementById('readoutCusto');
+
+  equipamentos.forEach(eq => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'equip-card';
+    card.dataset.codigo = eq.codigo;
+    card.innerHTML = `<span class="name">${eq.nome}</span><span class="watts">${eq.potencia} W</span>`;
+    card.addEventListener('click', () => {
+      selecionado = eq;
+      document.querySelectorAll('.equip-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      formError.textContent = '';
+    });
+    equipGrid.appendChild(card);
+  });
+
+  function formatKwh(valor) {
+    return valor.toFixed(2).padStart(6, '0');
+  }
+
+  function formatReal(valor) {
+    return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function atualizarPainel() {
+    const consumoTotal = itens.reduce((soma, item) => soma + item.consumo, 0);
+    const valorKwh = parseFloat(valorKwhInput.value) || 0;
+    const custoTotal = consumoTotal * valorKwh;
+
+    readoutKwh.innerHTML = `${formatKwh(consumoTotal)} <span class="unit">kWh/mês</span>`;
+    readoutCusto.innerHTML = `R$ ${formatReal(custoTotal)} <span class="unit">/mês</span>`;
+  }
+
+  function renderLista() {
+    itemList.querySelectorAll('.item-row:not(.head)').forEach(row => row.remove());
+
+    if (itens.length === 0) {
+      emptyState.style.display = 'block';
+      atualizarPainel();
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    itens.forEach((item, index) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <span>${item.nome}</span>
+        <span>${item.quantidade}</span>
+        <span>${item.horas}h</span>
+        <span class="consumo">${item.consumo.toFixed(2)} kWh/mês</span>
+        <button class="remove" title="Remover">×</button>
+      `;
+      row.querySelector('.remove').addEventListener('click', () => {
+        itens.splice(index, 1);
+        renderLista();
+      });
+      itemList.appendChild(row);
+    });
+
+    atualizarPainel();
+  }
+
+  addBtn.addEventListener('click', () => {
+    if (!selecionado) {
+      formError.textContent = 'Selecione um equipamento antes de adicionar.';
+      return;
+    }
+
+    const quantidade = parseInt(quantidadeInput.value, 10);
+    const horas = parseFloat(horasInput.value);
+
+    if (!quantidade || quantidade <= 0) {
+      formError.textContent = 'Quantidade precisa ser maior que zero.';
+      return;
+    }
+
+    if (isNaN(horas) || horas <= 0 || horas > 24) {
+      formError.textContent = 'Horas de uso devem estar entre 0 e 24.';
+      return;
+    }
+
+    const consumo = (selecionado.potencia * quantidade * horas * 30) / 1000;
+
+    itens.push({
+      nome: selecionado.nome,
+      quantidade: quantidade,
+      horas: horas,
+      consumo: consumo
+    });
+
+    formError.textContent = '';
+    quantidadeInput.value = '';
+    horasInput.value = '';
+    renderLista();
+  });
+
+  valorKwhInput.addEventListener('input', atualizarPainel);
+
+  renderLista();
+</script>
+</body>
+</html>
